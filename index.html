@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
     <title>we are open</title>
     <script src="https://unpkg.com/vue"></script>
+    <script src="https://unpkg.com/i18next/dist/umd/i18next.js"></script>
     <script src="https://openingh.openstreetmap.de/opening_hours.js/opening_hours+deps.min.js"></script>
 
     <style>
@@ -12,13 +13,13 @@
             margin: 0;
         }
 
-        h1, h2 {
+        h1, h2, h3 {
             color: white;
-            margin: 0;
         }
 
         h1 {
             font-size: 6rem;
+            margin: 0;
         }
 
         h2 {
@@ -27,7 +28,7 @@
 
         #app {
             align-items: center;
-            background: red;
+            background: #fe5f55;
             display: flex;
             height: 100vh;
             justify-content: center;
@@ -36,23 +37,24 @@
         }
 
         #app.open {
-            background: green;
+            background: #90be6d;
         }
     </style>
 </head>
 <body>
 <div id="app" :class="isOpen ? 'open' : ''">
-    <status v-bind:is-open="isOpen"></status>
+    <status v-bind:is-open="isOpen"
+            v-bind:now="now"></status>
 </div>
 <script>
 
     // follows the OSM opening hours syntax specification
     // @link https://wiki.openstreetmap.org/wiki/Key:opening_hours/specification
     let openingHours = ''
-        + 'Mo,Tu,Th,Fr 09:00-12:00,15:16-18:00,Sa 09:00-12:00;' // regular opening hours
+        + 'Mo,Tu,Th,Fr 09:00-12:36,15:00-18:00,Sa 09:00-12:00;' // regular opening hours
         + 'PH closed;' // closed on public holidays
         + 'Dec 24-Feb Th[1] closed;' // closed in winter times from christmas until first thursday in february
-        + 'Oct Mo[3] closed "Kirchweihmontag";' // kirchweih every third monday in october
+        + 'Oct Mo[3] closed "Kirchweihmontag";' // church fair every third monday in october
 
     let countryCode = 'de';
     let locale = navigator.language;
@@ -68,28 +70,58 @@
         }
     );
 
+    i18next.init({lng: 'en'});
+
+    console.log(i18next.t('human'));
+
     Vue.component('status', {
         inject: ['validator'],
         props: {
-            isOpen: Boolean
+            isOpen: Boolean,
+            now: String
         },
         name: 'Status',
         template: `
             <div>
             <h1>{{ getState() }}</h1>
             <h2>{{ getNext() }}</h2>
+            <h3>{{ getCurrent() }} Uhr</h3>
             </div>`,
         methods: {
+            getCurrent() {
+                return this.now;
+            },
             getNext() {
-                return this.validator.getNextChange();
+
+                let date = this.validator.getNextChange();
+                let time = date.toLocaleTimeString('de', {hour: '2-digit', minute: '2-digit'});
+
+                let day = date.getDay();
+
+                if (day === new Date().getDay()) {
+                    day = 'heute';
+                } else {
+                    day = 'am ' + date.toLocaleDateString('de', {weekday: 'long'});
+                }
+
+                return (this.isOpen)
+                    ? `Wir schließen ${day} um ${time} Uhr`
+                    : `Wir öffnen wieder ${day} um ${time} Uhr`;
             },
             getState: function() {
-                let iterator = this.validator.getIterator(new Date());
-                return iterator.getStateString(true);
+                return (this.isOpen)
+                    ? 'geöffnet'
+                    : 'geschlossen';
+            },
+            getNextChange() {
+                let date = this.validator.getNextChange();
+                let options = {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'};
+
+                return date.toLocaleDateString('de', options);
             }
         },
         watch: {
-            isOpen: function() {
+            now: function() {
                 this.$forceUpdate();
             }
         }
@@ -99,6 +131,7 @@
         el: '#app',
         data: {
             isOpen: null,
+            now: null,
             validator: validator
         },
         provide() {
@@ -109,6 +142,7 @@
         mounted() {
             setInterval(() => {
                 this.isOpen = this.validator.getState();
+                this.now = new Date().toLocaleString('de');
             }, 1000);
         },
     });
