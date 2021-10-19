@@ -1,14 +1,118 @@
 <!DOCTYPE html>
 <html>
-  <head>
+<head>
     <meta charset="utf-8">
-
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
     <title>we are open</title>
-    <link href="https://fonts.googleapis.com/css?family=Open+Sans+Condensed:300|Sonsie+One" rel="stylesheet" type="text/css">
-    <link rel="stylesheet" href="style.css">
-  </head>
+    <script src="https://unpkg.com/vue"></script>
+    <script src="https://openingh.openstreetmap.de/opening_hours.js/opening_hours+deps.min.js"></script>
 
-  <body>
-    Hello, we are open!
-  </body>
+    <style>
+        body {
+            margin: 0;
+        }
+
+        h1, h2 {
+            color: white;
+            margin: 0;
+        }
+
+        h1 {
+            font-size: 6rem;
+        }
+
+        h2 {
+            font-size: 2rem;
+        }
+
+        #app {
+            align-items: center;
+            background: red;
+            display: flex;
+            height: 100vh;
+            justify-content: center;
+            text-align: center;
+            width: 100vw;
+        }
+
+        #app.open {
+            background: green;
+        }
+    </style>
+</head>
+<body>
+<div id="app" :class="isOpen ? 'open' : ''">
+    <status v-bind:is-open="isOpen"></status>
+</div>
+<script>
+
+    // follows the OSM opening hours syntax specification
+    // @link https://wiki.openstreetmap.org/wiki/Key:opening_hours/specification
+    let openingHours = ''
+        + 'Mo,Tu,Th,Fr 09:00-12:00,15:16-18:00,Sa 09:00-12:00;' // regular opening hours
+        + 'PH closed;' // closed on public holidays
+        + 'Dec 24-Feb Th[1] closed;' // closed in winter times from christmas until first thursday in february
+        + 'Oct Mo[3] closed "Kirchweihmontag";' // kirchweih every third monday in october
+
+    let countryCode = 'de';
+    let locale = navigator.language;
+
+    let validator = new opening_hours(
+        openingHours,
+        {
+            'address': {
+                'country_code': countryCode
+            }
+        }, {
+            'locale': locale
+        }
+    );
+
+    Vue.component('status', {
+        inject: ['validator'],
+        props: {
+            isOpen: Boolean
+        },
+        name: 'Status',
+        template: `
+            <div>
+            <h1>{{ getState() }}</h1>
+            <h2>{{ getNext() }}</h2>
+            </div>`,
+        methods: {
+            getNext() {
+                return this.validator.getNextChange();
+            },
+            getState: function() {
+                let iterator = this.validator.getIterator(new Date());
+                return iterator.getStateString(true);
+            }
+        },
+        watch: {
+            isOpen: function() {
+                this.$forceUpdate();
+            }
+        }
+    });
+
+    let vm = new Vue({
+        el: '#app',
+        data: {
+            isOpen: null,
+            validator: validator
+        },
+        provide() {
+            return {
+                validator: this.validator
+            }
+        },
+        mounted() {
+            setInterval(() => {
+                this.isOpen = this.validator.getState();
+            }, 1000);
+        },
+    });
+
+</script>
+</body>
 </html>
