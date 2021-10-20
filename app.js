@@ -52,7 +52,7 @@ Vue.component('status', {
     }
 });
 
-let vm = new Vue({
+new Vue({
     el: '#app',
     data: {
         isOpen: null,
@@ -60,6 +60,13 @@ let vm = new Vue({
         now: null,
     },
     methods: {
+        setBodyClass: function() {
+            if (this.isOpen) {
+                document.body.classList.add('open');
+            } else {
+                document.body.classList.remove('open');
+            }
+        },
         getValidator: function() {
             let openingHours = getOpeningHours();
 
@@ -81,6 +88,7 @@ let vm = new Vue({
             this.isOpen = validator.getState();
             this.nextChange = validator.getNextChange();
             this.now = new Date().toLocaleString(countryCode) + ' Uhr';
+            this.setBodyClass();
         }, 1000);
     },
 });

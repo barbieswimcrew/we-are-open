@@ -8,7 +8,7 @@
     <script src="https://openingh.openstreetmap.de/opening_hours.js/opening_hours+deps.min.js"></script>
 </head>
 <body>
-<div id="app" :class="{'open': isOpen}">
+<div id="app">
     <status :is-open="isOpen" :next-change="nextChange" :now="now"></status>
 </div>
 <script type="module" src="app.js"></script>
