@@ -1,9 +1,6 @@
 import 'https://unpkg.com/vue';
 
-import { getOpeningHours } from "./openingHours.js";
-
-let countryCode = 'de';
-let locale = navigator.language;
+import { COUNTRY_CODE, LOCALE, OPENING_HOURS } from "./config.js";
 
 Vue.component('status', {
     props: {
@@ -20,29 +17,24 @@ Vue.component('status', {
             </div>`,
     methods: {
         getNext() {
-            let time = this.nextChange.toLocaleTimeString(countryCode, {hour: '2-digit', minute: '2-digit'});
+            let time = this.nextChange.toLocaleTimeString(COUNTRY_CODE, {hour: '2-digit', minute: '2-digit'});
 
             let day = this.nextChange.getDay();
 
             if (day === new Date().getDay()) {
                 day = 'heute';
             } else {
-                day = 'am ' + this.nextChange.toLocaleDateString(countryCode, {weekday: 'long'});
+                day = 'am ' + this.nextChange.toLocaleDateString(COUNTRY_CODE, {weekday: 'long'});
             }
 
             return (this.isOpen)
-                ? `Wir schließen ${day} um ${time} Uhr`
-                : `Wir öffnen wieder ${day} um ${time} Uhr`;
+                ? `Wir schließen um ${time} Uhr`
+                : `Wir öffnen ${day} um ${time} Uhr`;
         },
         getState: function() {
             return (this.isOpen)
                 ? 'geöffnet'
                 : 'geschlossen';
-        },
-        getNextChange() {
-            let options = {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'};
-
-            return this.nextChange.toLocaleDateString(countryCode, options);
         }
     },
     watch: {
@@ -67,28 +59,27 @@ new Vue({
                 document.body.classList.remove('open');
             }
         },
-        getValidator: function() {
-            let openingHours = getOpeningHours();
-
+        createValidator: function() {
             return new opening_hours(
-                openingHours,
+                OPENING_HOURS,
                 {
                     'address': {
-                        'country_code': countryCode
+                        'country_code': COUNTRY_CODE
                     }
                 }, {
-                    'locale': locale
+                    'locale': LOCALE
                 }
             );
         }
     },
     mounted() {
         setInterval(() => {
-            let validator = this.getValidator();
+            let validator = this.createValidator();
             this.isOpen = validator.getState();
             this.nextChange = validator.getNextChange();
-            this.now = new Date().toLocaleString(countryCode) + ' Uhr';
+            this.now = new Date().toLocaleString(COUNTRY_CODE) + ' Uhr';
             this.setBodyClass();
         }, 1000);
     },
+    template: `<div id="app"><status :is-open="isOpen" :next-change="nextChange" :now="now"></status></div>`
 });

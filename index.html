@@ -1,16 +1,19 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+
+    <!-- refresh the page automatically every twelve hours to get notice of possibly changed opening hours -->
+    <meta http-equiv="refresh" content="43200">
+
     <title>we are open</title>
+
     <link rel="stylesheet" href="app.css">
     <script src="https://openingh.openstreetmap.de/opening_hours.js/opening_hours+deps.min.js"></script>
 </head>
 <body>
-<div id="app">
-    <status :is-open="isOpen" :next-change="nextChange" :now="now"></status>
-</div>
+<div id="app"></div>
 <script type="module" src="app.js"></script>
 </body>
 </html>
