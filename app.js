@@ -17,7 +17,6 @@ Vue.component('status', {
             </div>`,
     methods: {
         getNext() {
-            console.log(this.nextChange);
             let time = this.nextChange.toLocaleTimeString(COUNTRY_CODE, {hour: '2-digit', minute: '2-digit'});
 
             let day = this.nextChange.getDay();
